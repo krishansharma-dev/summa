@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import FastAPI
+from fastapi import FastAPI , Response , status , HTTPException
 from pydantic import BaseModel
 from random import randrange
 
@@ -31,16 +31,41 @@ def main():
 def read_post():
     return {"posts": my_posts}
 
-@app.post("/posts")
+@app.post("/posts" , status_code=status.HTTP_201_CREATED)
 def create_post(post: Post):
     post_dict = post.dict()
     post_dict["id"] = randrange(0, 1000000)   # ✅ add id here
     my_posts.append(post_dict)
+    
     return {"data": post_dict}
+
+@app.get("/posts/latest")
+def get_latest_post():
+    post = my_posts[-1]
+    return {"latest_post": post}       
 
 @app.get("/posts/{id}")
 def get_post(id: int):
     post = find_post(id)
     print(post)
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id: {id} was not found")
     return {"post_detail": post}
+
   
+@app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_post(id: int):
+    index = -1
+    for i, post in enumerate(my_posts):
+        if post["id"] == id:
+            index = i
+            break
+    
+    if index == -1:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id: {id} does not exist"
+        )
+    
+    my_posts.pop(index)
+    return Response(status_code=status.HTTP_204_NO_CONTENT, detail=f"Post with id: {id} has been deleted" )
