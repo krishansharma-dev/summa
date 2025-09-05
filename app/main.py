@@ -13,6 +13,15 @@ class Post(BaseModel):
     published: bool = True
     rating: Optional[int] = None
 
+class update_post(BaseModel):
+    title: Optional[str] = None 
+    content: Optional[str] = None
+    author: Optional[str] = None
+    tags: Optional[list[str]] = []
+    published: Optional[bool] = None
+    rating: Optional[int] = None
+     
+
 my_posts = [
     { "id": 1, "title": "First Post", "content": "This is the first post", "author": "Alice", "tags": ["intro", "welcome"], "published": True, "rating": 5 },
     { "id": 2, "title": "Second Post", "content": "This is the second post", "author": "Bob", "tags": ["update"], "published": False, "rating": None }
@@ -53,8 +62,19 @@ def get_post(id: int):
     return {"post_detail": post}
 
   
-@app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@app.delete("/posts/{id}")
 def delete_post(id: int):
+    index = find_post = -1
+    my_posts.pop(index)
+    if index == None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Post with id: {id} does not exist"
+        )
+    return Response(status_code=status.HTTP_204_NO_CONTENT, detail=f"Post with id: {id} has been deleted" )
+
+@app.put("/posts/{id}")
+def update_post(id: int, updated_post: Post):   
     index = -1
     for i, post in enumerate(my_posts):
         if post["id"] == id:
@@ -67,5 +87,8 @@ def delete_post(id: int):
             detail=f"Post with id: {id} does not exist"
         )
     
-    my_posts.pop(index)
-    return Response(status_code=status.HTTP_204_NO_CONTENT, detail=f"Post with id: {id} has been deleted" )
+    post_dict = post.dict()
+    post_dict["id"] = id
+    my_posts[index] = post_dict
+    return {"data": post_dict}
+    print(updated_post)
